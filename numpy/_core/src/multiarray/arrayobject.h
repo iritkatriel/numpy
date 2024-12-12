@@ -65,4 +65,6 @@ static const int NPY_ARRAY_SAME_KIND_CASTING = (1 << 26);
 }
 #endif
 
+static const int NPY_ARRAY_IN_LOCALITY_CACHE = (1 << 26);
+
 #endif  /* NUMPY_CORE_SRC_MULTIARRAY_ARRAYOBJECT_H_ */

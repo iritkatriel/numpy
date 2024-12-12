@@ -407,6 +407,11 @@ multiarray_funcs_api = {
     # `PyDataType_GetArrFuncs` checks for the NumPy runtime version.
     '_PyDataType_GetArrFuncs':                       (365,),
     # End 2.0 API
+    # CMLQ
+    # 'fast_array_binary_ufunc':                       (313, MinVersion("1.22")),
+    # 'fast_array_unary_ufunc':                        (314, MinVersion("1.22")),
+    # 'fast_afloat_sin':                          (315, MinVersion("1.22")),
+    # 'fast_afloat_maximum':                      (316, MinVersion("1.22")),
 }
 
 ufunc_types_api = {

@@ -349,10 +349,16 @@ optional_function_attributes = [
 # Max possible optimization flags. We pass this flags to all our dispatch-able
 # (multi_targets) sources.
 compiler_id = cc.get_id()
+opt_flags = ['-O3', '-Wno-maybe-uninitialized', '-Wno-uninitialized']
+debug_loops = get_option('debug-loops')
+if debug_loops
+  opt_flags = ['-O0', '-ggdb3']
+endif
+
 max_opt = {
   'msvc': ['/O2'],
   'intel-cl': ['/O3'],
-}.get(compiler_id, ['-O3'])
+}.get(compiler_id, [opt_flags])
 max_opt = cc.has_multi_arguments(max_opt) and get_option('buildtype') != 'debug' ? max_opt : []
 
 # Optional GCC compiler builtins and their call arguments.
@@ -510,6 +516,11 @@ cdata.set('NPY_VISIBILITY_HIDDEN', visibility_hidden)
 # if not set, we're using lapack_lite
 if have_lapack
   cdata.set10('HAVE_EXTERNAL_LAPACK', have_lapack)
+endif
+
+cmlq_stats = get_option('cmlq-stats')
+if cmlq_stats
+  cdata.set10('CMLQ_STATS', true)
 endif
 
 config_h = configure_file(
@@ -1059,6 +1070,35 @@ if have_blas
   ]
 endif
 
+args = [py, '@INPUT@', '--outfile', '@OUTPUT@']
+if get_option('cmlq-stats')
+  args += ['--cache-stats']
+endif
+cmlq_code = custom_target(
+  'cmlq-code',
+  build_always_stale: true,
+  build_by_default: true,
+  output: 'cmlq_impl.h',
+  input: 'code_generators/cmlq_generator.py',
+  command: args,
+)
+cmlq_decl = custom_target(
+  'cmlq-decl',
+  build_always_stale: true,
+  build_by_default: true,
+  output: 'cmlq_decl.h',
+  input: 'code_generators/cmlq_generator.py',
+  command: [py, '@INPUT@', '--outfile', '@OUTPUT@', '--declarations'],
+)
+cmlq_binop_case_guards = custom_target(
+  'cmlq-binop-case-guards',
+  build_always_stale: true,
+  build_by_default: true,
+  output: 'cmlq_binop_case_guards.h',
+  input: 'code_generators/cmlq_generator.py',
+  command: [py, '@INPUT@', '--outfile', '@OUTPUT@', '--binop-case-guards'],
+)
+
 src_multiarray = multiarray_gen_headers + [
   'src/multiarray/abstractdtypes.c',
   'src/multiarray/alloc.c',
@@ -1110,6 +1150,8 @@ src_multiarray = multiarray_gen_headers + [
   src_file.process('src/multiarray/nditer_templ.c.src'),
   'src/multiarray/npy_static_data.c',
   'src/multiarray/number.c',
+  cmlq_code,
+  cmlq_binop_case_guards,
   'src/multiarray/refcount.c',
   src_file.process('src/multiarray/scalartypes.c.src'),
   'src/multiarray/sequence.c',
@@ -1203,6 +1245,8 @@ if use_svml
   endforeach
 endif
 
+static_lib = multiarray_umath_mtargets.static_lib('_multiarray_umath_mtargets')
+
 py.extension_module('_multiarray_umath',
   [
     config_h,
@@ -1227,7 +1271,7 @@ py.extension_module('_multiarray_umath',
     'src/highway'
   ],
   dependencies: [blas_dep],
-  link_with: [npymath_lib, multiarray_umath_mtargets.static_lib('_multiarray_umath_mtargets')] + highway_lib,
+  link_with: [npymath_lib, static_lib] + highway_lib,
   install: true,
   subdir: 'numpy/_core',
 )
