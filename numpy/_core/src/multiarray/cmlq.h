@@ -2,7 +2,11 @@
 #define CMLQ_H
 #define CMLQ_CACHE_SIZE 512
 #define SUBSCRIPT_CACHE_SIZE 512
+
+#include <Python.h>
+
 #include <mapping.h>
+
 typedef struct _CMLQIterCache {
     /* Initial fixed position data */
     npy_uint32 itflags;
@@ -19,6 +23,7 @@ enum CMLQCacheState {
     BROADCAST,
     DISABLED
 };
+
 typedef struct _CMLQIteratorPathCache {
     NpyIter *cached_iter;
     NpyIter_IterNextFunc *iter_next;
@@ -26,14 +31,17 @@ typedef struct _CMLQIteratorPathCache {
     char **dataptr;
     npy_intp *strides;
 } CMLQIteratorPathCache;
+
 typedef struct _CMLQTrivialPathCache {
     npy_intp fixed_strides[3];
     npy_intp count;
 } CMLQTrivialPathCache;
+
 typedef union _CMLQCacheData {
     CMLQTrivialPathCache trivial;
     CMLQIteratorPathCache iterator;
 } CMLQCacheData;
+
 typedef struct _CMLQCacheStatsElem {
     char *opname;
     _Py_CODEUNIT *instr_ptr;
@@ -73,10 +81,12 @@ typedef struct _CMLQLocalityCacheElem {
     CMLQCacheStatsElem stats;
 #endif
 } CMLQLocalityCacheElem;
+
 #define RESULT_CACHE_WARMUP 6
 #define IS_RESULT_CACHE_UNSTABLE(elem) elem->miss_counter >= 100
 // a negative counter means we are still warming up the cache
 #define RESET_CACHE_COUNTER(elem) elem->miss_counter = -RESULT_CACHE_WARMUP
+
 typedef struct _CMLQSubscriptCacheElem {
     _Py_CODEUNIT *instr;
     npy_index_info *indices;
