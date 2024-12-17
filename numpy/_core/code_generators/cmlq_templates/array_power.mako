@@ -1,3 +1,4 @@
+    /* -- array_power.mako -- */
 <%namespace file="cache_stats_macro.mako" import="*"/>
 ${signature}
 {
@@ -36,7 +37,8 @@ ${signature}
     <%include file="array_op.mako" args="try_elide_temp=True, auxdata_init=auxdata_init, arity=1"/>
 %endif
 deopt:
-    return 2;
+    assert(0);
+    return NULL;
 success:
     Py_DECREF(lhs);
     Py_DECREF(rhs);
@@ -44,11 +46,9 @@ success:
         Py_DECREF(m2);
     %endif
 
-    (*stack_pointer_ptr)--;
     assert(PyArray_CheckExact(result));
-    (*stack_pointer_ptr)[-1] = (PyObject *)result;
-    return 0;
+    return (PyObject *)result;
 fail:
-    return -1;
+    return NULL;
 }
 

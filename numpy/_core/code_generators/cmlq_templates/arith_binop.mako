@@ -12,7 +12,8 @@ ${signature}
 
 deopt:
     %if locality_cache:
-    elem = (CMLQLocalityCacheElem *)external_cache_pointer;
+    assert(0);
+    elem = (CMLQLocalityCacheElem *)descr->data;
     if (elem->state != UNUSED) {
         if (elem->state == TRIVIAL) {
             Py_XDECREF(elem->result);
@@ -24,7 +25,7 @@ deopt:
         elem->result = NULL;
     }
     %endif
-    return 2;
+    return NULL;
 success:
 
 %if cache_broadcast_array and left_scalar_name is not UNDEFINED:
@@ -40,12 +41,10 @@ success:
 %if right_scalar_name:
     Py_DECREF(m2);
 %endif
-    (*stack_pointer_ptr)--;
     assert(PyArray_CheckExact(result));
-    (*stack_pointer_ptr)[-1] = (PyObject *)result;
     CMLQ_PAPI_END("${opname}")
-    return 0;
+    return (PyObject *)result;
 fail:
-    return -1;
+    return NULL;
 }
 

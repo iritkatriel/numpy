@@ -1,3 +1,4 @@
+    /* -- locality_cache.mako -- */
 <%page args="arity=2, auxdata_init=None"/>
 <% assert arity == 2 or arity == 1 %>
 <%namespace file="cache_stats_macro.mako" import="*"/>

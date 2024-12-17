@@ -1,3 +1,4 @@
+    /* -- cache_stats_macro.mako -- */
 <%def name="count_stat(name, condition=None)">
     % if locality_stats:
         %if condition is not None:

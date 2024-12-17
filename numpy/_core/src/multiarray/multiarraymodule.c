@@ -4984,7 +4984,7 @@ np_specialize_op(_Py_CODEUNIT *instr, PyObject ***stack_pointer)
 #ifdef CMLQ_STATS
                         locality_cache[next_result_cache_index].stats.instr_ptr = instr;
 #endif
-                        specializer_info.SpecializeInstruction(instr, SLOT_MINIMUM_AINT_AINT, cmlq_minimum_aint_aint, &locality_cache[next_result_cache_index]);
+                        /* specializer_info.SpecializeInstruction(instr, SLOT_MINIMUM_AINT_AINT, cmlq_minimum_aint_aint, &locality_cache[next_result_cache_index]); */
                         return 1;
                     }
                 }
@@ -5451,7 +5451,7 @@ PyMODINIT_FUNC PyInit__multiarray_umath(void) {
     }
     specializer_info.TrySpecialization = np_specialize_op;
     specializer_info.FunctionEnd = invalidate_cache_entry;
-    PyExternal_SetSpecializer(&specializer_info);
+    //PyExternal_SetSpecializer(&specializer_info);
 
     return m;
 

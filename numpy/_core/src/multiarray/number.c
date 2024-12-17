@@ -336,7 +336,8 @@ void cache_miss(CMLQLocalityCacheElem *elem)
 
 void invalidate_cache_entry(_Py_CODEUNIT *instr, void *cache_pointer)
 {
-    if (instr->op.code == BINARY_OP_EXTERNAL || instr->op.code == CALL_EXTERNAL) {
+#define CALL_EXTEND 120
+    if (instr->op.code == BINARY_OP_EXTEND || instr->op.code == CALL_EXTEND) {
         CMLQLocalityCacheElem *restrict elem = cache_pointer;
         if (elem->state == BROADCAST) {
             // the broadcast cache remains
@@ -929,6 +930,78 @@ array_index(PyArrayObject *v)
     return PyArray_GETITEM(v, PyArray_DATA(v));
 }
 
+static int
+array_check_types(PyObject *lhs, PyObject *rhs, int ltype, int rtype)
+{
+    return PyArray_CheckExact(lhs) && PyArray_CheckExact(rhs) &&
+           (PyArray_DESCR((PyArrayObject *)lhs)->type_num == ltype) &&
+           (PyArray_DESCR((PyArrayObject *)rhs)->type_num == rtype);
+}
+
+static int
+array_float_float_guard(PyBinaryOpSpecializationDescr *descr, PyObject *lhs, PyObject *rhs)
+{
+    return array_check_types(lhs, rhs, NPY_FLOAT, NPY_FLOAT);
+}
+
+static CMLQLocalityCacheElem*
+cmlq_locality_cache_elem_new(void) {
+    return calloc(1, sizeof(CMLQLocalityCacheElem));
+}
+
+NPY_NO_EXPORT int
+array_specialize(PyObject *lhs, PyObject *rhs, int oparg, PyBinaryOpSpecializationDescr *descr)
+{
+    binaryopguardfunc guard = NULL;
+    binaryopactionfunc action = NULL;
+
+    if (!PyArray_Check(rhs)) {
+        return 0;
+    }
+    switch (oparg) {
+        case NB_SUBTRACT:
+            if (array_check_types(lhs, rhs, NPY_FLOAT, NPY_FLOAT)) {
+                guard = array_float_float_guard;
+                action = cmlq_afloat_subtract_afloat;
+            }
+            break;
+        case NB_INPLACE_SUBTRACT:
+            break;
+        case NB_ADD:
+            if (array_check_types(lhs, rhs, NPY_FLOAT, NPY_FLOAT)) {
+                guard = array_float_float_guard;
+                action = cmlq_afloat_add_afloat;
+            }
+            break;
+        case NB_INPLACE_ADD:
+            break;
+        case NB_MULTIPLY:
+            if (array_check_types(lhs, rhs, NPY_FLOAT, NPY_FLOAT)) {
+                guard = array_float_float_guard;
+                action = cmlq_afloat_multiply_afloat;
+            }
+            break;
+        case NB_INPLACE_MULTIPLY:
+            break;
+        case NB_TRUE_DIVIDE:
+            break;
+        case NB_POWER:
+            break;
+    }
+    if (guard != NULL) {
+        CMLQLocalityCacheElem *cache = cmlq_locality_cache_elem_new();
+        if (cache == NULL) {
+            return 0;
+        }
+        *descr = (PyBinaryOpSpecializationDescr){
+            .guard = guard,
+            .action = action,
+            .data = (void*)cache,
+        };
+        return 1;
+    }
+    return 0;
+}
 
 NPY_NO_EXPORT PyNumberMethods array_as_number = {
     .nb_add = array_add,

@@ -1,6 +1,5 @@
+    /* -- prepare_binary_args.mako -- */
 <%namespace file="cache_stats_macro.mako" import="*"/>
-    PyObject *m1 = (*stack_pointer_ptr)[-2];
-    PyObject *m2 = (*stack_pointer_ptr)[-1];
     %if commutative and right_scalar_name is not UNDEFINED:
     if (Py${right_scalar_name}_CheckExact(m1)) {
         PyObject *tmp = m1;

@@ -59,6 +59,7 @@ maintainer email:  oliphant.travis@ieee.org
 #include "numpyos.h"
 #include "refcount.h"
 #include "strfuncs.h"
+#include "temp_elide.h"
 
 #include "binop_override.h"
 #include "array_coercion.h"
@@ -1215,7 +1216,6 @@ array_iter(PyArrayObject *arr)
     return PySeqIter_New((PyObject *)arr);
 }
 
-
 NPY_NO_EXPORT PyTypeObject PyArray_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "numpy.ndarray",
@@ -1236,4 +1236,5 @@ NPY_NO_EXPORT PyTypeObject PyArray_Type = {
     .tp_methods = array_methods,
     .tp_getset = array_getsetlist,
     .tp_new = (newfunc)array_new,
+    .tp_binary_op_specialize = array_specialize,
 };

@@ -1,3 +1,4 @@
+    /* -- binop_case_guard.mako -- */
     if((
     %if left_scalar_name is not UNDEFINED:
         Py${left_scalar_name}_CheckExact(lhs) &&
@@ -78,12 +79,12 @@
                 // precompute the broadcast array
                 locality_cache[next_result_cache_index].state = BROADCAST;
                 locality_cache[next_result_cache_index].result = (PyArrayObject *)PyArray_FromAny(op, descr, 0, 0, 0, NULL);
-                specializer_info.SpecializeInstruction(instr, ${slot_name}_BROADCAST_CACHE, ${opname}_broadcast_cache, &locality_cache[next_result_cache_index]);
+                /* specializer_info.SpecializeInstruction(instr, ${slot_name}_BROADCAST_CACHE, ${opname}_broadcast_cache, &locality_cache[next_result_cache_index]); */
             } else {
-                specializer_info.SpecializeInstruction(instr, ${slot_name}, ${opname}, &locality_cache[next_result_cache_index]);
+                /* specializer_info.SpecializeInstruction(instr, ${slot_name}, ${opname}, &locality_cache[next_result_cache_index]); */
             }
         %else:
-            specializer_info.SpecializeInstruction(instr, ${slot_name}, ${opname}, &locality_cache[next_result_cache_index]);
+            /* specializer_info.SpecializeInstruction(instr, ${slot_name}, ${opname}, &locality_cache[next_result_cache_index]); */
         %endif
         return 1;
     </%block>

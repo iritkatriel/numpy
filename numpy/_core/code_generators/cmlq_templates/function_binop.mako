@@ -1,3 +1,4 @@
+    /* -- function_binop.mako -- */
 <%namespace file="cache_stats_macro.mako" import="*"/>
 ${signature}
 {

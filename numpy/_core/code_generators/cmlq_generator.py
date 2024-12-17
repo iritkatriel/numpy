@@ -51,20 +51,25 @@ next_slot = 1
 class BinOp:
     left_type: str
     right_type: str
+
     # force a promotion of the operand to a specific NumPy type
     # canonicalizing commutative operands happens before a possible promotion
     left_promotion: str = None
     right_promotion: str = None
     result_type: str
+
     # like the above, but does not force promotion if the Python scalar does not fit into the NumPy type
     # this is useful, e.g., when trying to promote a Python float (which can be both a float or a double) to a
     # Numpy float array
     left_conditional_promotion: bool = False
     right_conditional_promotion: bool = False
+
     # should the operation overwrite the left operand?
     inplace: bool = False
+
     # is the operation commutative? If so, try to move scalar operands to the right
     commutative: bool = True
+
     opname: str = ""
     operation: str
     loop_function: str
@@ -72,13 +77,16 @@ class BinOp:
     impl_template: str = "arith_binop.mako"
     guard_template: str = "binop_case_guard.mako"
     flatten: bool = False
+
     # cache various intermediate results per instruction occurence
     locality_cache: bool = True
+
     # disabled, we adaptively free the cache instead
     # locality_cache_size_limit: int = os.sysconf('SC_PAGE_SIZE')
     # maintain cache statistics and print after this many instruction occurences
     locality_stats: bool = False
-    # maintain a cache and statisticst, but never use the cache, only analyze locality
+
+    # maintain a cache and statistics, but never use the cache, only analyze locality
     analyze_locality: bool = False
     def __attrs_post_init__(self):
         if self.inplace and not self.operation.startswith("inplace_"):
@@ -90,8 +98,10 @@ class BinOp:
     def with_broadcast_cache_variant(self):
         return (self.is_python_scalar(self.left_type) or
          self.is_python_scalar(self.right_type))
+
     def is_python_scalar(self, type):
         return type.startswith("s")
+
     def to_template_args(self):
         args = attrs.asdict(self)
         if self.is_python_scalar(self.left_type):
@@ -112,12 +122,15 @@ class BinOp:
 
     def slot_name(self):
         return f"SLOT_{self.left_type.upper()}_{self.operation.upper()}_{self.right_type.upper()}"
+
     def signature(self):
-        return f"""int {self.opname}(void *restrict external_cache_pointer, PyObject *restrict **stack_pointer_ptr)"""
+        return f"""PyObject* {self.opname}(PyBinaryOpSpecializationDescr *restrict descr, PyObject *m1, PyObject *m2)"""
+
     def slot_define(self):
         global next_slot
         next_slot += 1
         return f"""#define {self.slot_name()} {next_slot - 1}"""
+
     def build_variants(self):
         if self.with_broadcast_cache_variant:
             return [self, ScalarBroadcastBinop(**attrs.asdict(self))]
@@ -136,8 +149,10 @@ class ScalarBroadcastBinop(BinOp):
         self.locality_cache = False
         # handling the broadcast cache case is done in the general template already
         self.guard_template = None
+
     def slot_name(self):
         return f"SLOT_{self.left_type.upper()}_{self.operation.upper()}_{self.right_type.upper()}_BROADCAST_CACHE"
+
     def to_template_args(self):
         args = super().to_template_args()
         args["cache_broadcast_array"] = True
@@ -148,9 +163,11 @@ class FunctionBinOp(BinOp):
     def __attrs_post_init__(self):
         if self.opname == "":
             self.opname = f"cmlq_{self.operation}_{self.left_type}_{self.right_type}"
+
     @property
     def with_broadcast_cache_variant(self):
         return False
+
     def slot_name(self):
         return f"SLOT_{self.operation.upper()}_{self.left_type.upper()}_{self.right_type.upper()}"
 
@@ -464,14 +481,14 @@ def build_derivatives(flatten, cache_stats):
             impl_template="array_power.mako",
             commutative=False,
         ),
-        FunctionBinOp(
-            operation="minimum",
-            left_type="aint",
-            right_type="aint",
-            result_type="NPY_INT",
-            loop_function="INT_minimum",
-            impl_template="function_binop.mako",
-        ),
+        #FunctionBinOp(
+        #    operation="minimum",
+        #    left_type="aint",
+        #    right_type="aint",
+        #    result_type="NPY_INT",
+        #    loop_function="INT_minimum",
+        #    impl_template="function_binop.mako",
+        #),
     ]
 
     all_derivatives = []

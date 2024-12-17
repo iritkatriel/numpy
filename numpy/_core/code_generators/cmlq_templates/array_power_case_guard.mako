@@ -12,7 +12,7 @@
             #ifdef CMLQ_STATS
             locality_cache[next_result_cache_index].stats.instr_ptr = instr;
             #endif
-            specializer_info.SpecializeInstruction(instr, ${slot_name}, ${opname}, &locality_cache[next_result_cache_index]);
+            // specializer_info.SpecializeInstruction(instr, ${slot_name}, ${opname}, &locality_cache[next_result_cache_index]);
             return 1;
         }
 </%block>

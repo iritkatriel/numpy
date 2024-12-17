@@ -1,4 +1,4 @@
-
+    /* -- array_op.mako -- */
 <%page args="result_type, try_elide_temp=False, auxdata_init=None, arity=2, inplace=False"/>
 <% assert arity == 2 or arity == 1 %>
 <%namespace file="cache_stats_macro.mako" import="*"/>
@@ -284,4 +284,4 @@
         goto success;
     }
     // some other error we can't handle
-    raise(SIGTRAP);
+    //raise(SIGTRAP);
