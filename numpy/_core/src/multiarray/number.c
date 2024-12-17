@@ -336,7 +336,8 @@ void cache_miss(CMLQLocalityCacheElem *elem)
 
 void invalidate_cache_entry(_Py_CODEUNIT *instr, void *cache_pointer)
 {
-    if (instr->op.code == BINARY_OP_EXTERNAL || instr->op.code == CALL_EXTERNAL) {
+#define CALL_EXTEND 120
+    if (instr->op.code == BINARY_OP_EXTEND || instr->op.code == CALL_EXTEND) {
         CMLQLocalityCacheElem *restrict elem = cache_pointer;
         if (elem->state == BROADCAST) {
             // the broadcast cache remains
@@ -929,6 +930,60 @@ array_index(PyArrayObject *v)
     return PyArray_GETITEM(v, PyArray_DATA(v));
 }
 
+static int
+array_check_types(PyObject *lhs, PyObject *rhs, int ltype, int rtype)
+{
+    return PyArray_CheckExact(lhs) && PyArray_CheckExact(rhs) &&
+           (PyArray_DESCR((PyArrayObject *)lhs)->type_num == ltype) &&
+           (PyArray_DESCR((PyArrayObject *)rhs)->type_num == rtype);
+}
+
+static int
+array_float_float_guard(PyBinaryOpSpecializationDescr *descr, PyObject *lhs, PyObject *rhs)
+{
+    return array_check_types(lhs, rhs, NPY_FLOAT, NPY_FLOAT);
+}
+
+static PyObject*
+cmlq_array_afloat_subtract_afloat(PyBinaryOpSpecializationDescr *descr, PyObject *m1, PyObject *m2)
+{
+fprintf(stderr, "cmlq_array_afloat_subtract_afloat\n");
+    PyObject *res;
+    BINOP_GIVE_UP_IF_NEEDED(m1, m2, nb_subtract, n_ops.subtract);
+    if (try_binary_elide(m1, m2, &array_inplace_subtract, &res, 0)) {
+        return res;
+    }
+    CMLQ_PAPI_REGION("array_subtract", res = PyArray_GenericBinaryFunction(m1, m2, n_ops.subtract));
+    return res;
+}
+
+NPY_NO_EXPORT int
+array_specialize(PyObject *lhs, PyObject *rhs, int oparg, PyBinaryOpSpecializationDescr *descr)
+{
+fprintf(stderr, "array_specialize\n");
+    if (!PyArray_Check(rhs)) {
+        return 0;
+    }
+    switch (oparg) {
+        case NB_SUBTRACT:
+            if (array_check_types(lhs, rhs, NPY_FLOAT, NPY_FLOAT)) {
+                *descr = (PyBinaryOpSpecializationDescr){
+                    .guard = array_float_float_guard,
+                    .action = cmlq_array_afloat_subtract_afloat,
+                };
+                return 1;
+            }
+            break;
+        case NB_INPLACE_SUBTRACT:
+        case NB_ADD:
+        case NB_INPLACE_ADD:
+        case NB_MULTIPLY:
+        case NB_INPLACE_MULTIPLY:
+        case NB_TRUE_DIVIDE:
+        case NB_POWER:
+    }
+    return 0;
+}
 
 NPY_NO_EXPORT PyNumberMethods array_as_number = {
     .nb_add = array_add,

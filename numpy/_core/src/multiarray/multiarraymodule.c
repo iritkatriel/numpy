@@ -5451,7 +5451,7 @@ PyMODINIT_FUNC PyInit__multiarray_umath(void) {
     }
     specializer_info.TrySpecialization = np_specialize_op;
     specializer_info.FunctionEnd = invalidate_cache_entry;
-    PyExternal_SetSpecializer(&specializer_info);
+    //PyExternal_SetSpecializer(&specializer_info);
 
     return m;
 

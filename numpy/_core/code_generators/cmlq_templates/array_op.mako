@@ -284,4 +284,4 @@
         goto success;
     }
     // some other error we can't handle
-    raise(SIGTRAP);
+    //raise(SIGTRAP);
