@@ -563,40 +563,6 @@ def generate_case_guard_functions(derivatives, lookup, out):
             render_template(template, template_args, out)
         print("\n")
 
-def generate_case_guards(derivatives, lookup, out):
-    global print
-    print = functools.partial(print, file=out)
-    binops = [
-        d
-        for d in derivatives
-        if isinstance(d, BinOp) and not isinstance(d, FunctionBinOp)
-    ]
-    groups = defaultdict(list)
-    for binop in binops:
-        name = binop.operation
-        groups[name].append(binop)
-    for group_name, group in groups.items():
-        case_name = f"NB_{group_name.upper()}"
-        print(
-            f"case {case_name}:",
-        )
-        print(
-            "{",
-        )
-        for derivative in group:
-            if not derivative.guard_template:
-                continue
-            template = lookup.get_template(derivative.guard_template)
-            template_args = derivative.to_template_args()
-            render_template(template, template_args, out)
-        print(
-            "\treport_missing_binop_case(instr, lhs, rhs);\n"
-            "\tbreak;",
-        )
-        print(
-            "}",
-        )
-
 def generate_declarations(derivatives, out):
     global print
     print = functools.partial(print, file=out)
