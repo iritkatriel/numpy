@@ -12,11 +12,11 @@
             <%count_stat("left_type_misses")%>
             goto deopt;
         }
+        %if not cache_broadcast_array:
         PyArray_Descr *left_descr = NULL;
         %if left_promotion is not None:
         left_descr = PyArray_DescrFromType(${left_promotion});
         %endif
-        %if not cache_broadcast_array:
         PyArrayObject *lhs = (PyArrayObject *)PyArray_FromAny(m1, left_descr, 0, 0, 0, NULL);
         %else:
         assert(elem->state == BROADCAST && elem->result);
@@ -27,7 +27,7 @@
             <%count_stat("left_type_misses")%>
             goto deopt;
         }
-        PyArrayObject *lhs = (PyArrayObject *)m1;
+        PyArrayObject *lhs = (PyArrayObject *)Py_NewRef(m1);
         if (NPY_UNLIKELY(PyArray_DESCR(lhs)->type_num != ${left_numpy_name})) {
             <%count_stat("left_type_misses")%>
             goto deopt;
@@ -38,11 +38,11 @@
             <%count_stat("right_type_misses")%>
             goto deopt;
         }
+        %if not cache_broadcast_array or left_scalar_name is not UNDEFINED:
         PyArray_Descr *right_descr = NULL;
         %if right_promotion is not None:
         right_descr = PyArray_DescrFromType(${right_promotion});
         %endif
-        %if not cache_broadcast_array or left_scalar_name is not UNDEFINED:
         PyArrayObject *rhs = (PyArrayObject *)PyArray_FromAny(m2, right_descr, 0, 0, 0, NULL);
         %else:
         assert(elem->state == BROADCAST && elem->result);
@@ -53,7 +53,7 @@
             <%count_stat("right_type_misses")%>
             goto deopt;
         }
-        PyArrayObject *rhs = (PyArrayObject *)m2;
+        PyArrayObject *rhs = (PyArrayObject *)Py_NewRef(m2);
         if (NPY_UNLIKELY(PyArray_DESCR(rhs)->type_num != ${right_numpy_name})) {
             <%count_stat("right_type_misses")%>
             goto deopt;

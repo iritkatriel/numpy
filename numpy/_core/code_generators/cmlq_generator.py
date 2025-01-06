@@ -76,6 +76,7 @@ class BinOp:
 
     impl_template: str = "arith_binop.mako"
     guard_template: str = "binop_case_guard.mako"
+    guard_function_template: str = "binop_case_guard_function.mako"
     flatten: bool = False
 
     # cache various intermediate results per instruction occurence
@@ -102,7 +103,7 @@ class BinOp:
     def is_python_scalar(self, type):
         return type.startswith("s")
 
-    def to_template_args(self):
+    def to_template_args(self, is_guard=False):
         args = attrs.asdict(self)
         if self.is_python_scalar(self.left_type):
             args["left_scalar_name"] = to_python_type(self.left_type)
@@ -112,7 +113,7 @@ class BinOp:
             args["right_scalar_name"] = to_python_type(self.right_type)
         else:
             args["right_numpy_name"] = to_numpy_type(self.right_type)
-        signature = self.signature()
+        signature = self.guard_signature() if is_guard else self.signature()
         if self.flatten:
             signature = f"__attribute__((flatten)) {signature}"
         args["signature"] = signature
@@ -125,6 +126,9 @@ class BinOp:
 
     def signature(self):
         return f"""PyObject* {self.opname}(PyBinaryOpSpecializationDescr *restrict descr, PyObject *m1, PyObject *m2)"""
+
+    def guard_signature(self):
+        return f"""int {self.opname}_guard(PyBinaryOpSpecializationDescr *restrict descr, PyObject *m1, PyObject *m2)"""
 
     def slot_define(self):
         global next_slot
@@ -149,6 +153,7 @@ class ScalarBroadcastBinop(BinOp):
         self.locality_cache = False
         # handling the broadcast cache case is done in the general template already
         self.guard_template = None
+        self.guard_function_template = None
 
     def slot_name(self):
         return f"SLOT_{self.left_type.upper()}_{self.operation.upper()}_{self.right_type.upper()}_BROADCAST_CACHE"
@@ -538,6 +543,28 @@ def generate_implementations(derivatives, lookup, out):
         template_args = derivative.to_template_args()
         render_template(template, template_args, out)
 
+def generate_case_guard_functions(derivatives, lookup, out):
+    global print
+    print = functools.partial(print, file=out)
+    binops = [
+        d
+        for d in derivatives
+        if isinstance(d, BinOp) and not isinstance(d, FunctionBinOp)
+    ]
+    groups = defaultdict(list)
+    for binop in binops:
+        name = binop.operation
+        groups[name].append(binop)
+
+    for group_name, group in groups.items():
+        for derivative in group:
+            if not derivative.guard_function_template:
+                continue
+            template = lookup.get_template(derivative.guard_function_template)
+            template_args = derivative.to_template_args(is_guard=True)
+            render_template(template, template_args, out)
+        print("\n")
+
 def generate_case_guards(derivatives, lookup, out):
     global print
     print = functools.partial(print, file=out)
@@ -595,6 +622,12 @@ group.add_argument(
     action="store_true",
     help="Generate cases for the specialization switch",
 )
+group.add_argument(
+    "-g",
+    "--binop-case-guard-functions",
+    action="store_true",
+    help="Generate guard functions",
+)
 parser.add_argument(
     "-s",
     "--cache-stats",
@@ -619,6 +652,8 @@ with smart_open(args.outfile) as out:
     derivatives = build_derivatives(args.flatten_derivatives, args.cache_stats)
     if args.binop_case_guards:
         generate_case_guards(derivatives, lookup, out)
+    elif args.binop_case_guard_functions:
+        generate_case_guard_functions(derivatives, lookup, out)
     elif args.declarations:
         generate_declarations(derivatives, out)
     else:

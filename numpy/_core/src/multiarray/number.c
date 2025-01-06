@@ -357,6 +357,7 @@ void invalidate_cache_entry(_Py_CODEUNIT *instr, void *cache_pointer)
 }
 
 #include "cmlq_impl.h"
+#include "cmlq_binop_case_guard_functions.h"
 
 static PyObject *
 array_remainder(PyObject *m1, PyObject *m2)
@@ -930,55 +931,57 @@ array_index(PyArrayObject *v)
     return PyArray_GETITEM(v, PyArray_DATA(v));
 }
 
-static int
-array_check_types(PyObject *lhs, PyObject *rhs, int ltype, int rtype)
-{
-    return PyArray_CheckExact(lhs) && PyArray_CheckExact(rhs) &&
-           (PyArray_DESCR((PyArrayObject *)lhs)->type_num == ltype) &&
-           (PyArray_DESCR((PyArrayObject *)rhs)->type_num == rtype);
-}
-
-static int
-array_float_float_guard(PyBinaryOpSpecializationDescr *descr, PyObject *lhs, PyObject *rhs)
-{
-    return array_check_types(lhs, rhs, NPY_FLOAT, NPY_FLOAT);
-}
-
 static CMLQLocalityCacheElem*
 cmlq_locality_cache_elem_new(void) {
     return calloc(1, sizeof(CMLQLocalityCacheElem));
 }
+
+typedef struct spec_info_t {
+    int oparg;
+    binaryopguardfunc guard;
+    binaryopactionfunc action;
+} spec_info;
+
+spec_info spec_infos[] = {
+    { NB_SUBTRACT, cmlq_afloat_subtract_afloat_guard, cmlq_afloat_subtract_afloat },
+    { NB_ADD, cmlq_afloat_add_afloat_guard, cmlq_afloat_add_afloat },
+    { NB_MULTIPLY, cmlq_afloat_multiply_afloat_guard, cmlq_afloat_multiply_afloat },
+};
 
 NPY_NO_EXPORT int
 array_specialize(PyObject *lhs, PyObject *rhs, int oparg, PyBinaryOpSpecializationDescr *descr)
 {
     binaryopguardfunc guard = NULL;
     binaryopactionfunc action = NULL;
+    spec_info *info = NULL;
 
     if (!PyArray_Check(rhs)) {
         return 0;
     }
     switch (oparg) {
         case NB_SUBTRACT:
-            if (array_check_types(lhs, rhs, NPY_FLOAT, NPY_FLOAT)) {
-                guard = array_float_float_guard;
-                action = cmlq_afloat_subtract_afloat;
+            info = &spec_infos[0];
+            if (info->guard(NULL, lhs, rhs)) {
+                guard = info->guard;
+                action = info->action;
             }
             break;
         case NB_INPLACE_SUBTRACT:
             break;
         case NB_ADD:
-            if (array_check_types(lhs, rhs, NPY_FLOAT, NPY_FLOAT)) {
-                guard = array_float_float_guard;
-                action = cmlq_afloat_add_afloat;
+            info = &spec_infos[1];
+            if (info->guard(NULL, lhs, rhs)) {
+                guard = info->guard;
+                action = info->action;
             }
             break;
         case NB_INPLACE_ADD:
             break;
         case NB_MULTIPLY:
-            if (array_check_types(lhs, rhs, NPY_FLOAT, NPY_FLOAT)) {
-                guard = array_float_float_guard;
-                action = cmlq_afloat_multiply_afloat;
+            info = &spec_infos[2];
+            if (info->guard(NULL, lhs, rhs)) {
+                guard = info->guard;
+                action = info->action;
             }
             break;
         case NB_INPLACE_MULTIPLY:
