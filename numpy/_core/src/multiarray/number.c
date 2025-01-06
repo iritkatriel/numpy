@@ -932,8 +932,16 @@ array_index(PyArrayObject *v)
 }
 
 static CMLQLocalityCacheElem*
-cmlq_locality_cache_elem_new(void) {
+cmlq_locality_cache_elem_new(void)
+{
     return calloc(1, sizeof(CMLQLocalityCacheElem));
+}
+
+static void
+cmlq_binop_free(PyBinaryOpSpecializationDescr *descr)
+{
+    free(descr->data);
+    descr->data = NULL;
 }
 
 typedef struct spec_info_t {
@@ -999,6 +1007,7 @@ array_specialize(PyObject *lhs, PyObject *rhs, int oparg, PyBinaryOpSpecializati
         *descr = (PyBinaryOpSpecializationDescr){
             .guard = guard,
             .action = action,
+            .free = cmlq_binop_free,
             .data = (void*)cache,
         };
         return 1;
