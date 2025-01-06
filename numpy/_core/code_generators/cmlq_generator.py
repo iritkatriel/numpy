@@ -75,7 +75,6 @@ class BinOp:
     loop_function: str
 
     impl_template: str = "arith_binop.mako"
-    guard_template: str = "binop_case_guard.mako"
     guard_function_template: str = "binop_case_guard_function.mako"
     flatten: bool = False
 
@@ -152,7 +151,6 @@ class ScalarBroadcastBinop(BinOp):
         # we don't want to generate locality cache code, just the cache element access
         self.locality_cache = False
         # handling the broadcast cache case is done in the general template already
-        self.guard_template = None
         self.guard_function_template = None
 
     def slot_name(self):
@@ -462,7 +460,7 @@ def build_derivatives(flatten, cache_stats):
             result_type="NPY_DOUBLE",
             loop_function="DOUBLE_square",
             impl_template="array_power.mako",
-            guard_template="array_power_case_guard.mako",
+            guard_function_template="array_power_case_guard.mako",
             commutative=False,
             fixed_exponent=2.0,
         ),
@@ -473,7 +471,7 @@ def build_derivatives(flatten, cache_stats):
             result_type="NPY_DOUBLE",
             loop_function="DOUBLE_square",
             impl_template="array_power.mako",
-            guard_template="array_power_case_guard.mako",
+            guard_function_template="array_power_case_guard.mako",
             commutative=False,
             fixed_exponent=2,
         ),
@@ -617,12 +615,6 @@ group.add_argument(
     help="Generate slot definitions and forward declarations",
 )
 group.add_argument(
-    "-c",
-    "--binop-case-guards",
-    action="store_true",
-    help="Generate cases for the specialization switch",
-)
-group.add_argument(
     "-g",
     "--binop-case-guard-functions",
     action="store_true",
@@ -650,9 +642,7 @@ lookup = TemplateLookup(directories=[template_dir], strict_undefined=False)
 
 with smart_open(args.outfile) as out:
     derivatives = build_derivatives(args.flatten_derivatives, args.cache_stats)
-    if args.binop_case_guards:
-        generate_case_guards(derivatives, lookup, out)
-    elif args.binop_case_guard_functions:
+    if args.binop_case_guard_functions:
         generate_case_guard_functions(derivatives, lookup, out)
     elif args.declarations:
         generate_declarations(derivatives, out)

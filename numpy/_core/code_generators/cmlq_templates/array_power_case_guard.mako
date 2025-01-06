@@ -1,4 +1,4 @@
-<%inherit file="binop_case_guard.mako"/>
+<%inherit file="binop_case_guard_function.mako"/>
 <%block name="install_handler">
     %if right_scalar_name == "Float":
         double exponent = PyFloat_AsDouble(rhs);
