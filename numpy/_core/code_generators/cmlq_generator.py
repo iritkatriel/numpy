@@ -1,5 +1,6 @@
 #!python
 import argparse
+import collections
 import contextlib
 import functools
 import os
@@ -570,6 +571,39 @@ def generate_declarations(derivatives, out):
         print(f"{derivative.signature()};\n")
         print(f"{derivative.slot_define()}\n")
 
+def generate_specialization_specs(derivatives, out):
+    global print
+    print = functools.partial(print, file=out)
+    specs = collections.defaultdict(list)
+    for derivative in derivatives:
+        if not derivative.guard_function_template:
+            continue
+        specs[derivative.operation].append(derivative.opname)
+
+    print('typedef struct {')
+    print('    binaryopguardfunc guard;')
+    print('    binaryopactionfunc action;')
+    print('} cmlq_spec_item;\n')
+
+    print('typedef struct {')
+    print('    int start, end;')
+    print('} cmlq_spec_index_t;\n')
+
+    print(f'cmlq_spec_index_t cmlq_spec_index[NB_OPARG_LAST] = {{')
+    idx = 0
+    for operation, opnames in specs.items():
+        print(f'    [NB_{operation.upper()}] = {{ {idx}, {idx + len(opnames)} }},')
+        idx += len(opnames)
+    print('};\n')
+
+    num_specs = sum(len(ops) for ops in specs.values())
+    assert idx == num_specs
+    print(f'cmlq_spec_item cmlq_specs[{num_specs}] = {{')
+    for operation, opnames in specs.items():
+        for opname in opnames:
+            print(f'        {{{opname}_guard, {opname}}},')
+    print('};')
+
 parser = argparse.ArgumentParser()
 parser.add_argument("-o", "--outfile", type=str, help="Path to the output file")
 group = parser.add_mutually_exclusive_group()
@@ -585,6 +619,12 @@ group.add_argument(
     "--binop-case-guard-functions",
     action="store_true",
     help="Generate guard functions",
+)
+group.add_argument(
+    "-p",
+    "--binop-specialization-specs",
+    action="store_true",
+    help="Generate specialization specs",
 )
 parser.add_argument(
     "-s",
@@ -612,5 +652,7 @@ with smart_open(args.outfile) as out:
         generate_case_guard_functions(derivatives, lookup, out)
     elif args.declarations:
         generate_declarations(derivatives, out)
+    elif args.binop_specialization_specs:
+        generate_specialization_specs(derivatives, out)
     else:
         generate_implementations(derivatives, lookup, out)

@@ -944,62 +944,30 @@ cmlq_binop_free(PyBinaryOpSpecializationDescr *descr)
     descr->data = NULL;
 }
 
-typedef struct spec_info_t {
-    int oparg;
-    binaryopguardfunc guard;
-    binaryopactionfunc action;
-} spec_info;
 
-spec_info spec_infos[] = {
-    { NB_SUBTRACT, cmlq_afloat_subtract_afloat_guard, cmlq_afloat_subtract_afloat },
-    { NB_ADD, cmlq_afloat_add_afloat_guard, cmlq_afloat_add_afloat },
-    { NB_MULTIPLY, cmlq_afloat_multiply_afloat_guard, cmlq_afloat_multiply_afloat },
-};
+#include "cmlq_binop_specialization_specs.h"
 
 NPY_NO_EXPORT int
 array_specialize(PyObject *lhs, PyObject *rhs, int oparg, PyBinaryOpSpecializationDescr *descr)
 {
-    binaryopguardfunc guard = NULL;
-    binaryopactionfunc action = NULL;
-    spec_info *info = NULL;
-
     if (!PyArray_Check(rhs)) {
         return 0;
     }
-    switch (oparg) {
-        case NB_SUBTRACT:
-            info = &spec_infos[0];
-            if (info->guard(NULL, lhs, rhs)) {
-                guard = info->guard;
-                action = info->action;
-            }
+
+    binaryopguardfunc guard = NULL;
+    binaryopactionfunc action = NULL;
+
+    int start = cmlq_spec_index[oparg].start;
+    int end = cmlq_spec_index[oparg].end;
+    for (int i = start; i < end; i++) {
+        cmlq_spec_item* spec = &cmlq_specs[i];
+        if (spec->guard == NULL || spec->guard(NULL, lhs, rhs)) {
+            guard = spec->guard;
+            action = spec->action;
             break;
-        case NB_INPLACE_SUBTRACT:
-            break;
-        case NB_ADD:
-            info = &spec_infos[1];
-            if (info->guard(NULL, lhs, rhs)) {
-                guard = info->guard;
-                action = info->action;
-            }
-            break;
-        case NB_INPLACE_ADD:
-            break;
-        case NB_MULTIPLY:
-            info = &spec_infos[2];
-            if (info->guard(NULL, lhs, rhs)) {
-                guard = info->guard;
-                action = info->action;
-            }
-            break;
-        case NB_INPLACE_MULTIPLY:
-            break;
-        case NB_TRUE_DIVIDE:
-            break;
-        case NB_POWER:
-            break;
+        }
     }
-    if (guard != NULL) {
+    if (action != NULL) {
         CMLQLocalityCacheElem *cache = cmlq_locality_cache_elem_new();
         if (cache == NULL) {
             return 0;

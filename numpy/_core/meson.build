@@ -1098,6 +1098,15 @@ cmlq_binop_case_guard_functions = custom_target(
   input: 'code_generators/cmlq_generator.py',
   command: [py, '@INPUT@', '--outfile', '@OUTPUT@', '--binop-case-guard-functions'],
 )
+cmlq_binop_specialization_specs = custom_target(
+  'cmlq-binop-specialization-specs', 
+  build_always_stale: true,
+  build_by_default: true,
+  output: 'cmlq_binop_specialization_specs.h',
+  input: 'code_generators/cmlq_generator.py',
+  command: [py, '@INPUT@', '--outfile', '@OUTPUT@', '--binop-specialization-specs'],
+)
+
 
 src_multiarray = multiarray_gen_headers + [
   'src/multiarray/abstractdtypes.c',
@@ -1152,6 +1161,7 @@ src_multiarray = multiarray_gen_headers + [
   'src/multiarray/number.c',
   cmlq_code,
   cmlq_binop_case_guard_functions,
+  cmlq_binop_specialization_specs,
   'src/multiarray/refcount.c',
   src_file.process('src/multiarray/scalartypes.c.src'),
   'src/multiarray/sequence.c',
