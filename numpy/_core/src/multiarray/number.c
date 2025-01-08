@@ -938,33 +938,34 @@ cmlq_locality_cache_elem_new(void)
 }
 
 static void
-cmlq_binop_free(PyBinaryOpSpecializationDescr *descr)
+cmlq_binop_free(void *data)
 {
-    free(descr->data);
-    descr->data = NULL;
+    if (data != NULL) {
+        free(data);
+    }
 }
 
 
 #include "cmlq_binop_specialization_specs.h"
 
 NPY_NO_EXPORT int
-array_specialize(PyObject *lhs, PyObject *rhs, int oparg, PyBinaryOpSpecializationDescr *descr)
+array_specialize(PyObject *lhs, PyObject *rhs, int oparg, binaryopguardfunc *guard,
+                 binaryopactionfunc *action, binaryopfreefunc *free, void **data)
 {
     if (!PyArray_Check(rhs)) {
         return 0;
     }
 
-    binaryopguardfunc guard = NULL;
-    binaryopactionfunc action = NULL;
-
+    cmlq_spec_item* spec = NULL;
     int start = cmlq_spec_index[oparg].start;
     int end = cmlq_spec_index[oparg].end;
     for (int i = start; i < end; i++) {
-        cmlq_spec_item* spec = &cmlq_specs[i];
+        spec = &cmlq_specs[i];
         if (spec->guard == NULL || spec->guard(NULL, lhs, rhs)) {
-            guard = spec->guard;
-            action = spec->action;
             break;
+        }
+        else {
+            spec = NULL;
         }
     }
     if (action != NULL) {
@@ -972,12 +973,11 @@ array_specialize(PyObject *lhs, PyObject *rhs, int oparg, PyBinaryOpSpecializati
         if (cache == NULL) {
             return 0;
         }
-        *descr = (PyBinaryOpSpecializationDescr){
-            .guard = guard,
-            .action = action,
-            .free = cmlq_binop_free,
-            .data = (void*)cache,
-        };
+
+        *guard = spec->guard;
+        *action = spec->action;
+        *free = cmlq_binop_free;
+        *data = (void*)cache;
         return 1;
     }
     return 0;

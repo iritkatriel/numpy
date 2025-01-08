@@ -1,5 +1,5 @@
     /* -- load_cache_elem.mako -- */
-    CMLQLocalityCacheElem *restrict elem = (CMLQLocalityCacheElem *restrict)descr->data;
+    CMLQLocalityCacheElem *restrict elem = (CMLQLocalityCacheElem *restrict)data;
 %if locality_stats:
 <%namespace file="cache_stats_macro.mako" import="*"/>
     CMLQCacheStatsElem *cache_stats = &elem->stats;

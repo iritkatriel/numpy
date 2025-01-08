@@ -13,7 +13,7 @@ ${signature}
 deopt:
     %if locality_cache:
     assert(0);
-    elem = (CMLQLocalityCacheElem *)descr->data;
+    elem = (CMLQLocalityCacheElem *)data;
     if (elem->state != UNUSED) {
         if (elem->state == TRIVIAL) {
             Py_XDECREF(elem->result);

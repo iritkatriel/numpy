@@ -47,8 +47,8 @@ extern NPY_NO_EXPORT NumericOps n_ops;
 extern NPY_NO_EXPORT PyNumberMethods array_as_number;
 
 extern NPY_NO_EXPORT int
-array_specialize(PyObject *lhs, PyObject *rhs, int oparg,
-                 PyBinaryOpSpecializationDescr *descr);
+array_specialize(PyObject *lhs, PyObject *rhs, int oparg, binaryopguardfunc *guard,
+                 binaryopactionfunc *action, binaryopfreefunc *free, void **data);
 
 NPY_NO_EXPORT PyObject *
 array_int(PyArrayObject *v);

@@ -125,10 +125,10 @@ class BinOp:
         return f"SLOT_{self.left_type.upper()}_{self.operation.upper()}_{self.right_type.upper()}"
 
     def signature(self):
-        return f"""PyObject* {self.opname}(PyBinaryOpSpecializationDescr *restrict descr, PyObject *m1, PyObject *m2)"""
+        return f"""PyObject* {self.opname}(PyObject *m1, PyObject *m2, void *data)"""
 
     def guard_signature(self):
-        return f"""int {self.opname}_guard(PyBinaryOpSpecializationDescr *restrict descr, PyObject *m1, PyObject *m2)"""
+        return f"""int {self.opname}_guard(PyObject *m1, PyObject *m2, void *data)"""
 
     def slot_define(self):
         global next_slot
