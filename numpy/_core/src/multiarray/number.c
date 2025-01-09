@@ -845,29 +845,26 @@ array_specialize(PyObject *lhs, PyObject *rhs, int oparg, binaryopguardfunc *gua
         return 0;
     }
 
-    cmlq_spec_item* spec = NULL;
+    cmlq_spec_item *spec = NULL;
     int start = cmlq_spec_index[oparg].start;
     int end = cmlq_spec_index[oparg].end;
     for (int i = start; i < end; i++) {
         spec = &cmlq_specs[i];
-        if (spec->guard == NULL || spec->guard(NULL, lhs, rhs)) {
-            break;
+        if (spec->guard == NULL || spec->guard(lhs, rhs, NULL)) {
+            CMLQLocalityCacheElem *cache = cmlq_locality_cache_elem_new();
+            if (cache == NULL) {
+                return 0;
+            }
+
+            *guard = spec->guard;
+            *action = spec->action;
+            *free = cmlq_binop_free;
+            *data = (void*)cache;
+            return 1;
         }
         else {
             spec = NULL;
         }
-    }
-    if (action != NULL) {
-        CMLQLocalityCacheElem *cache = cmlq_locality_cache_elem_new();
-        if (cache == NULL) {
-            return 0;
-        }
-
-        *guard = spec->guard;
-        *action = spec->action;
-        *free = cmlq_binop_free;
-        *data = (void*)cache;
-        return 1;
     }
     return 0;
 }
