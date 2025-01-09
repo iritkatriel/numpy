@@ -44,11 +44,11 @@ jobs:
     - name: Install linter requirements
       run:
         python -m pip install -r requirements/linter_requirements.txt
-    - name: Run linter on PR diff
+    - name: Run linter on PR
       env:
         BASE_REF: ${{ github.base_ref }}
       run:
-        python tools/linter.py --branch origin/"$BASE_REF"
+        python tools/linter.py
 
   smoke_test:
     # To enable this job on a fork, comment out:
@@ -194,12 +194,13 @@ jobs:
       shell: 'script -q -e -c "bash --noprofile --norc -eo pipefail {0}"'
       run: |
         spin bench --quick
-    - name: Check docstests
-      shell: 'script -q -e -c "bash --noprofile --norc -eo pipefail {0}"'
-      run: |
-        pip install scipy-doctest hypothesis matplotlib scipy pytz pandas
-        spin check-docs -v
-        spin check-tutorials -v
+    # These are run on CircleCI
+    # - name: Check docstests
+    #   shell: 'script -q -e -c "bash --noprofile --norc -eo pipefail {0}"'
+    #   run: |
+    #     pip install scipy-doctest==1.6.0 hypothesis==6.104.1 matplotlib scipy pytz pandas
+    #     spin check-docs -v
+    #     spin check-tutorials -v
 
   sdist:
     needs: [smoke_test]

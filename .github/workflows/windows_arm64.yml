@@ -168,13 +168,13 @@ jobs:
         if ((Test-Path -LiteralPath variable:\LASTEXITCODE)) { exit $LASTEXITCODE }
 
     - name: Upload Artifacts
-      uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+      uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
       with:
           name: ${{ env.python_version }}-win_arm64
           path: ./*.whl
 
     - name: Setup Mamba
-      uses: mamba-org/setup-micromamba@06375d89d211a1232ef63355742e9e2e564bc7f7
+      uses: mamba-org/setup-micromamba@068f1ab4b37ed9b3d9f73da7db90a0cda0a48d29
       with:
         # for installation of anaconda-client, required for upload to
         # anaconda.org

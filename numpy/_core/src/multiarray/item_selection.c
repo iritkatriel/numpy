@@ -2014,8 +2014,7 @@ PyArray_LexSort(PyObject *sort_keys, int axis)
                 }
                 rcode = argsort(its[j]->dataptr,
                         (npy_intp *)rit->dataptr, N, mps[j]);
-                if (rcode < 0 || (PyDataType_REFCHK(PyArray_DESCR(mps[j]))
-                            && PyErr_Occurred())) {
+                if (rcode < 0 || (object && PyErr_Occurred())) {
                     goto fail;
                 }
                 PyArray_ITER_NEXT(its[j]);
@@ -2753,6 +2752,7 @@ PyArray_CountNonzero(PyArrayObject *self)
     if (iter == NULL) {
         return -1;
     }
+    /* IterationNeedsAPI also checks dtype for whether `nonzero` may need it */
     needs_api = NpyIter_IterationNeedsAPI(iter);
 
     /* Get the pointers for inner loop iteration */
@@ -2762,7 +2762,9 @@ PyArray_CountNonzero(PyArrayObject *self)
         return -1;
     }
 
-    NPY_BEGIN_THREADS_NDITER(iter);
+    if (!needs_api) {
+        NPY_BEGIN_THREADS_THRESHOLDED(NpyIter_GetIterSize(iter));
+    }
 
     dataptr = NpyIter_GetDataPtrArray(iter);
     strideptr = NpyIter_GetInnerStrideArray(iter);
@@ -2983,9 +2985,12 @@ PyArray_Nonzero(PyArrayObject *self)
             return NULL;
         }
 
+        /* IterationNeedsAPI also checks dtype for whether `nonzero` may need it */
         needs_api = NpyIter_IterationNeedsAPI(iter);
 
-        NPY_BEGIN_THREADS_NDITER(iter);
+        if (!needs_api) {
+            NPY_BEGIN_THREADS_THRESHOLDED(NpyIter_GetIterSize(iter));
+        }
 
         dataptr = NpyIter_GetDataPtrArray(iter);
 

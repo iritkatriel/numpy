@@ -154,7 +154,6 @@ if sys.version_info < (3, 12):
     ]
 
 
-
 PUBLIC_ALIASED_MODULES = [
     "numpy.char",
     "numpy.emath",
@@ -272,25 +271,18 @@ if sys.version_info < (3, 12):
 
 def is_unexpected(name):
     """Check if this needs to be considered."""
-    if '._' in name or '.tests' in name or '.setup' in name:
-        return False
-
-    if name in PUBLIC_MODULES:
-        return False
-
-    if name in PUBLIC_ALIASED_MODULES:
-        return False
-
-    if name in PRIVATE_BUT_PRESENT_MODULES:
-        return False
-
-    return True
+    return (
+        '._' not in name and '.tests' not in name and '.setup' not in name
+		and name not in PUBLIC_MODULES
+		and name not in PUBLIC_ALIASED_MODULES
+		and name not in PRIVATE_BUT_PRESENT_MODULES
+	)
 
 
-if sys.version_info < (3, 12):
-    SKIP_LIST = ["numpy.distutils.msvc9compiler"]
-else:
+if sys.version_info >= (3, 12):
     SKIP_LIST = []
+else:
+    SKIP_LIST = ["numpy.distutils.msvc9compiler"]
 
 
 # suppressing warnings from deprecated modules
@@ -583,7 +575,7 @@ def test_functions_single_location():
     visited_functions: Set[Callable[..., Any]] = set()
     # Functions often have `__name__` overridden, therefore we need
     # to keep track of locations where functions have been found.
-    functions_original_paths: Dict[Callable[..., Any], str] = dict()
+    functions_original_paths: Dict[Callable[..., Any], str] = {}
 
     # Here we aggregate functions with more than one location.
     # It must be empty for the test to pass.
@@ -700,9 +692,9 @@ def test___module___attribute():
                 "numpy._core" not in member.__name__ and  # outside _core
                 # not in a skip module list
                 member_name not in [
-                    "char", "core", "ctypeslib", "f2py", "ma", "lapack_lite",
-                    "mrecords", "testing", "tests", "polynomial", "typing",
-                    "mtrand", "bit_generator",
+                    "char", "core", "f2py", "ma", "lapack_lite", "mrecords",
+                    "testing", "tests", "polynomial", "typing", "mtrand",
+                    "bit_generator",
                 ] and
                 member not in visited_modules  # not visited yet
             ):
@@ -729,6 +721,13 @@ def test___module___attribute():
                 ):
                     continue
 
+                # ctypeslib exports ctypes c_long/c_longlong
+                if (
+                    member.__name__ in ("c_long", "c_longlong") and
+                    module.__name__ == "numpy.ctypeslib"
+                ):
+                    continue
+
                 # skip cdef classes
                 if member.__name__ in (
                     "BitGenerator", "Generator", "MT19937", "PCG64", "PCG64DXSM",
@@ -737,11 +736,11 @@ def test___module___attribute():
                     continue
 
                 incorrect_entries.append(
-                    dict(
-                        Func=member.__name__,
-                        actual=member.__module__,
-                        expected=module.__name__,
-                    )
+                    {
+                        "Func": member.__name__,
+                        "actual": member.__module__,
+                        "expected": module.__name__,
+                    }
                 )
                 visited_functions.add(member)
 
@@ -802,10 +801,10 @@ def test___qualname___and___module___attribute():
                 member not in visited_functions
             ):
                 incorrect_entries.append(
-                    dict(
-                        found_at=f"{module.__name__}:{member_name}",
-                        advertises=f"{member.__module__}:{member.__qualname__}",
-                    )
+                    {
+                        "found_at": f"{module.__name__}:{member_name}",
+                        "advertises": f"{member.__module__}:{member.__qualname__}",
+                    }
                 )
                 visited_functions.add(member)
 

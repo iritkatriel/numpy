@@ -48,7 +48,9 @@ C_ABI_VERSION = '0x02000000'
 # 0x00000011 - 1.25.x
 # 0x00000012 - 2.0.x
 # 0x00000013 - 2.1.x
-C_API_VERSION = '0x00000013'
+# 0x00000013 - 2.2.x
+# 0x00000014 - 2.3.x
+C_API_VERSION = '0x00000014'
 
 # Check whether we have a mismatch between the set C API VERSION and the
 # actual C API VERSION. Will raise a MismatchCAPIError if so.
@@ -95,6 +97,10 @@ if use_svml
   if not fs.exists('src/umath/svml')
     error('Missing the `SVML` git submodule! Run `git submodule update --init` to fix this.')
   endif
+endif
+
+if host_machine.cpu_family() == 'loongarch64'
+  add_project_arguments(['-DHWY_COMPILE_ONLY_SCALAR'], language: ['cpp'])
 endif
 
 use_highway = not get_option('disable-highway')
@@ -891,6 +897,7 @@ foreach gen_mtargets : [
       ASIMD, NEON,
       VSX3, VSX2,
       VXE, VX,
+      LSX,
     ]
   ],
   [
@@ -901,6 +908,7 @@ foreach gen_mtargets : [
       NEON,
       VSX4, VSX2,
       VX,
+      LSX,
     ]
   ],
   [
@@ -911,6 +919,7 @@ foreach gen_mtargets : [
       VSX3, VSX2,
       NEON,
       VXE, VX,
+      LSX,
     ]
   ],
   [
@@ -927,7 +936,8 @@ foreach gen_mtargets : [
       AVX512_SKX, [AVX2, FMA3],
       VSX4, VSX2,
       NEON_VFPV4,
-      VXE
+      VXE,
+      LSX,
     ]
   ],
   [
@@ -938,6 +948,7 @@ foreach gen_mtargets : [
       AVX512_SKX, AVX2, SSE2,
       VSX2,
       VX,
+      LSX,
     ]
   ],
   [
@@ -948,6 +959,7 @@ foreach gen_mtargets : [
       AVX512_SKX, AVX2, SSE2,
       VSX2,
       VXE, VX,
+      LSX,
     ]
   ],
   [
@@ -965,6 +977,7 @@ foreach gen_mtargets : [
       VSX4, VSX3, VSX2,
       NEON_VFPV4,
       VXE2, VXE,
+      LSX,
     ]
   ],
   [
@@ -979,7 +992,8 @@ foreach gen_mtargets : [
       ASIMD, NEON,
       AVX512_SKX, AVX2, SSE2,
       VSX2,
-      VXE, VX
+      VXE, VX,
+      LSX,
     ]
   ],
   [
@@ -989,7 +1003,8 @@ foreach gen_mtargets : [
       SSE41, SSE2,
       VSX2,
       ASIMD, NEON,
-      VXE, VX
+      VXE, VX,
+      LSX,
     ]
   ],
   [
@@ -999,6 +1014,7 @@ foreach gen_mtargets : [
       SSE41, SSE2,
       VSX2,
       ASIMD, NEON,
+      LSX,
     ]
   ],
   [
@@ -1009,6 +1025,7 @@ foreach gen_mtargets : [
       ASIMD, NEON,
       VSX3, VSX2,
       VXE, VX,
+      LSX,
     ]
   ],
   [
@@ -1019,6 +1036,7 @@ foreach gen_mtargets : [
       NEON,
       VSX2,
       VX,
+      LSX,
     ]
   ],
 ]

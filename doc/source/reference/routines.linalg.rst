@@ -2,8 +2,8 @@
 
 .. module:: numpy.linalg
 
-Linear algebra (:mod:`numpy.linalg`)
-====================================
+Linear algebra
+==============
 
 The NumPy linear algebra functions rely on BLAS and LAPACK to provide efficient
 low level implementations of standard linear algebra algorithms. Those
@@ -60,6 +60,7 @@ Matrix and vector products
    linalg.vecdot
    inner
    outer
+   linalg.outer
    matmul
    linalg.matmul (Array API compatible location)
    matvec
@@ -71,6 +72,7 @@ Matrix and vector products
    linalg.matrix_power
    kron
    linalg.cross
+   
 
 Decompositions
 --------------
@@ -78,7 +80,6 @@ Decompositions
    :toctree: generated/
 
    linalg.cholesky
-   linalg.outer
    linalg.qr
    linalg.svd
    linalg.svdvals
